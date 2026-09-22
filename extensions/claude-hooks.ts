@@ -1,10 +1,11 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { loadClaudeHooks, loadOptions } from "../src/config.ts";
+import { buildToolCallPayload, buildToolResultPayload } from "../src/payload.ts";
 import { ClaudeHooksEngine, type RunContext } from "../src/engine.ts";
 import type { HookOutcome } from "../src/output.ts";
 import { formatCompact, formatExpanded, type HooksSummary, SUMMARY_ENTRY_TYPE, shouldAppendSummary } from "../src/summary.ts";
-import { claudeToolName, fromClaudeToolInput, replaceInputInPlace, toClaudeToolInput, toolNameCandidates } from "../src/tools.ts";
+import { fromClaudeToolInput, replaceInputInPlace, toolNameCandidates } from "../src/tools.ts";
 import type { HookRunResult, LoadedHook } from "../src/types.ts";
 
 const CONTEXT_MESSAGE_TYPE = "claude-hooks-context";
@@ -168,12 +169,12 @@ export default function claudeHooks(pi: ExtensionAPI) {
 	pi.on("tool_call", async (event, ctx) => {
 		const candidates = toolNameCandidates(event.toolName);
 		const input = event.input as Record<string, unknown>;
-		const outcome = await runEvent(ctx, "PreToolUse", candidates, {
-			tool_name: claudeToolName(event.toolName),
-			tool_input: toClaudeToolInput(event.toolName, input),
-			tool_use_id: event.toolCallId,
-			pi_tool_name: event.toolName,
-		});
+		const outcome = await runEvent(
+			ctx,
+			"PreToolUse",
+			candidates,
+			buildToolCallPayload(basePayload(ctx, "PreToolUse"), event.toolName, input, event.toolCallId),
+		);
 		if (!outcome) return;
 
 		if (outcome.blocked) {
@@ -203,21 +204,24 @@ export default function claudeHooks(pi: ExtensionAPI) {
 		const candidates = toolNameCandidates(event.toolName);
 		const hookEvent = event.isError ? "PostToolUseFailure" : "PostToolUse";
 		const input = event.input as Record<string, unknown>;
-		const outputText = event.content
-			.map((c) => (c.type === "text" ? c.text : "[image]"))
-			.join("\n");
 		const preContext = pendingToolContext.get(event.toolCallId) ?? [];
 		pendingToolContext.delete(event.toolCallId);
 
-		const outcome = await runEvent(ctx, hookEvent, candidates, {
-			tool_name: claudeToolName(event.toolName),
-			tool_input: toClaudeToolInput(event.toolName, input),
-			tool_use_id: event.toolCallId,
-			pi_tool_name: event.toolName,
-			...(event.isError
-				? { error: outputText, is_interrupt: false }
-				: { tool_response: { output: outputText, details: event.details, is_error: false } }),
-		});
+		const outcome = await runEvent(
+			ctx,
+			hookEvent,
+			candidates,
+			buildToolResultPayload(
+				basePayload(ctx, hookEvent),
+				event.toolName,
+				input,
+				event.toolCallId,
+				event.content,
+				event.details,
+				event.isError,
+				ctx.signal?.aborted ?? false,
+			),
+		);
 
 		const feedback = [...preContext, ...(outcome?.feedback ?? []), ...(outcome?.context ?? [])];
 		if (outcome?.stop) {

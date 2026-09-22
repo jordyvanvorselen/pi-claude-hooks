@@ -105,4 +105,5 @@ export interface LoadResult {
 	hooks: LoadedHook[];
 	sources: string[];
 	warnings: string[];
+	disabled?: boolean;
 }

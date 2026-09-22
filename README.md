@@ -38,9 +38,9 @@ Hook files are read in this order. Later files append to the earlier ones.
 | 3 | `<project>/.claude/settings.local.json` | Personal project hooks. Only for trusted projects. |
 | 4 | `<project>/.claude/*.json` | Any other JSON file that contains hooks, for example `apm-hooks.json`. Glob is configurable. |
 
-A file counts as a hook file when it has a top-level `hooks` object, or when it has event names such as `PreToolUse` at the top level (the shape APM writes to `apm-hooks.json`).
+A file counts as a hook file when it has a top-level `hooks` object, or when it has event names such as `PreToolUse` at the top level (the shape APM writes to `apm-hooks.json`). The extra-file scan is a pi-claude-hooks extension rather than a Claude standard-settings feature; malformed matching JSON is skipped with a warning.
 
-Identical hooks are deduplicated. When `settings.json` and `apm-hooks.json` contain the same event, matcher and command, that hook runs once.
+Hook declarations are not deduplicated. When `settings.json` and `apm-hooks.json` contain the same event, matcher and command, both declarations run. `disableAllHooks` is read only from these three standard settings files, with local > project > user precedence; extra files cannot override it.
 
 Only `type: "command"` hooks run. `http`, `prompt`, `agent` and `mcp_tool` hooks are skipped with one warning per type.
 
@@ -136,7 +136,7 @@ Claude Code scripts see capitalised tool names and `file_path` style fields. Pi 
 
 ### Tool names
 
-Matchers are tested against the pi name and the Claude Code name. `"Edit|Write"` and `"Bash"` work unchanged. `tool_name` in the stdin payload is the Claude Code name. `pi_tool_name` holds the pi name.
+Matchers are tested against separate, case-sensitive Pi and Claude Code names. Empty/`*` match all; known tool names (`Bash`, `bash`, etc.) and `|`/`,` lists are exact, trimmed alternatives. Other patterns are unanchored JavaScript regular expressions. Invalid regular expressions match nothing and produce one warning. `tool_name` in the stdin payload is the Claude Code name. `pi_tool_name` holds the pi name.
 
 | Pi tool | Claude Code name |
 | --- | --- |
@@ -192,7 +192,7 @@ Every hook gets JSON on stdin:
 }
 ```
 
-Event specific fields: `tool_response: { output, details, is_error }` on `PostToolUse`, `error` on `PostToolUseFailure`, `prompt` on `UserPromptSubmit`, `source` and `model` on `SessionStart`, `reason` on `SessionEnd`, `stop_hook_active` and `last_assistant_message` on `Stop`, `trigger` and `custom_instructions` on `PreCompact`, `trigger` and `compaction_summary` on `PostCompact`.
+Event specific fields: `tool_response: { output, content, details, is_error }` on `PostToolUse`, `error` and `is_interrupt` on `PostToolUseFailure`, `prompt` on `UserPromptSubmit`, `source` and `model` on `SessionStart`, `reason` on `SessionEnd`, `stop_hook_active` and `last_assistant_message` on `Stop`, `trigger` and `custom_instructions` on `PreCompact`, `trigger` and `compaction_summary` on `PostCompact`. `output` is rendered text; `content` and `details` are the original Pi values. Image blocks render as `[image]` in `output` but remain intact in `content`. `is_interrupt` is inferred from the Pi abort signal and common abort text (such as `Command aborted`).
 
 ## Environment
 
@@ -235,9 +235,9 @@ Print a JSON object on stdout with exit code 0.
 
 ## Supported and unsupported
 
-Supported: command hooks, all events in the mapping table, matchers, per-hook `timeout`, exit codes 0 and 2, the JSON fields listed above, `stop_hook_active` loop protection on `Stop`.
+Supported: command hooks, all events in the mapping table, matchers, per-hook `timeout`, exit codes 0 and 2, the JSON fields listed above, `stop_hook_active` loop protection on `Stop`. Settings merge additively in user → project → local → configured extra-file order, including duplicate declarations. Extra JSON files are an explicit pi-claude-hooks extension (and support Claude's bare-event APM shape); malformed extras are skipped with a warning. `disableAllHooks` uses only standard settings, with local > project > user precedence.
 
-Not supported: `http`, `prompt`, `agent` and `mcp_tool` hook types. Events pi has no equivalent for: `Notification`, `PermissionRequest`, `PermissionDenied`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PreModelSwitch`, `PostModelSwitch`, `Elicitation`, worktree, teammate and task events. Hook fields `if`, `once`, `async`, `statusMessage`, `args`. `CLAUDE_ENV_FILE`. Plugin and skill frontmatter hooks. `allowManagedHooksOnly` and managed settings.
+Not supported: `http`, `prompt`, `agent` and `mcp_tool` hook types. Events pi has no equivalent for: `Notification`, `PermissionRequest`, `PermissionDenied`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PreModelSwitch`, `PostModelSwitch`, `Elicitation`, worktree, teammate and task events. Hook fields `if`, `once`, `async`, `statusMessage`, `args`. `CLAUDE_ENV_FILE`. Managed settings, CLI settings, plugins, skill frontmatter hooks, and `CLAUDE_CONFIG_DIR` are warned about and ignored. `allowManagedHooksOnly` is not supported.
 
 Pi has no permission prompts of its own, so `permissionDecision: "allow"` has nothing to bypass. It simply lets the call proceed.
 

@@ -53,13 +53,13 @@ function runCtx(projectDir: string) {
 	return { cwd: projectDir, env: { ...hookEnv, CLAUDE_PROJECT_DIR: projectDir } };
 }
 
-test("hertek hooks load once each from settings.json and apm-hooks.json", () => {
+test("hertek hooks preserve additive declarations from settings.json and apm-hooks.json", () => {
 	const { engine } = makeHertekProject();
-	assert.equal(engine.hooksFor("PreToolUse").length, 3);
-	assert.equal(engine.hooksFor("PostToolUse").length, 1);
-	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("bash")).length, 1);
-	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("edit")).length, 2);
-	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("write")).length, 2);
+	assert.equal(engine.hooksFor("PreToolUse").length, 6);
+	assert.equal(engine.hooksFor("PostToolUse").length, 2);
+	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("bash")).length, 2);
+	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("edit")).length, 4);
+	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("write")).length, 4);
 	assert.equal(engine.hooksFor("PreToolUse", toolNameCandidates("read")).length, 0);
 });
 
@@ -138,7 +138,7 @@ test("PostToolUse comment warning fires on new_string synthesised from edits", a
 		runCtx(projectDir),
 	);
 	assert.equal(outcome.blocked, false);
-	assert.equal(outcome.feedback.length, 1);
+	assert.equal(outcome.feedback.length, 2);
 	assert.match(outcome.feedback[0], /Comment detected/);
 });
 
@@ -150,7 +150,7 @@ test("PostToolUse comment warning fires on write content", async () => {
 		payload(projectDir, "PostToolUse", "write", { path: "connect-backend/src/main/java/App.java", content: "// hello\nclass App {}" }),
 		runCtx(projectDir),
 	);
-	assert.equal(outcome.feedback.length, 1);
+	assert.equal(outcome.feedback.length, 2);
 });
 
 test("PostToolUse comment warning stays quiet for comment-free code", async () => {

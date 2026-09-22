@@ -35,13 +35,29 @@ test("hooks merge in order: user, project, local, extra files", () => {
 	assert.equal(result.sources.length, 4);
 });
 
-test("identical hooks appearing in two files run once", () => {
+test("identical hooks appearing in two files run twice", () => {
 	const { home, projectDir } = makeProject({
 		".claude/settings.json": { hooks: { PreToolUse: [hook("echo same", "Bash")] } },
 		".claude/apm-hooks.json": { PreToolUse: [hook("echo same", "Bash")] },
 	});
 	const result = loadClaudeHooks({ home, projectDir, includeProject: true }, DEFAULT_OPTIONS);
-	assert.equal(result.hooks.length, 1);
+	assert.equal(result.hooks.length, 2);
+});
+
+test("disableAllHooks uses local, then project, then user precedence", () => {
+	const { home, projectDir } = makeProject({
+		"~/.claude/settings.json": { disableAllHooks: true, hooks: { PreToolUse: [hook("echo user")] } },
+		".claude/settings.json": { disableAllHooks: false, hooks: { PreToolUse: [hook("echo project")] } },
+		".claude/settings.local.json": { hooks: { PreToolUse: [hook("echo local")] } },
+		".claude/extra.json": { disableAllHooks: true, hooks: { PreToolUse: [hook("echo extra")] } },
+	});
+	const enabled = loadClaudeHooks({ home, projectDir, includeProject: true }, DEFAULT_OPTIONS);
+	assert.equal(enabled.disabled, false);
+	assert.deepEqual(enabled.hooks.map((h) => h.command), ["echo user", "echo project", "echo local", "echo extra"]);
+	writeFileSync(join(projectDir, ".claude", "settings.local.json"), JSON.stringify({ disableAllHooks: true }));
+	const disabled = loadClaudeHooks({ home, projectDir, includeProject: true }, DEFAULT_OPTIONS);
+	assert.equal(disabled.disabled, true);
+	assert.equal(disabled.hooks.length, 0);
 });
 
 test("untrusted project loads only user hooks", () => {
@@ -85,6 +101,17 @@ test("extra file glob is configurable", () => {
 	);
 	const none = loadClaudeHooks({ home, projectDir, includeProject: true }, { ...DEFAULT_OPTIONS, extraFiles: [] });
 	assert.equal(none.hooks.length, 0);
+});
+
+test("malformed extras warn and valid extras retain lexical order", () => {
+	const { home, projectDir } = makeProject({
+		".claude/b.json": { hooks: { PreToolUse: [hook("echo b")] } },
+		".claude/a.json": { PreToolUse: [hook("echo a")] },
+	});
+	writeFileSync(join(projectDir, ".claude", "bad.json"), "{broken");
+	const result = loadClaudeHooks({ home, projectDir, includeProject: true }, { ...DEFAULT_OPTIONS, extraFiles: ["*.json"] });
+	assert.deepEqual(result.hooks.map((h) => h.command), ["echo a", "echo b"]);
+	assert.ok(result.warnings.some((warning) => warning.includes("bad.json")));
 });
 
 test("json files without hooks are ignored", () => {

@@ -9,6 +9,7 @@ import {
 	type RawHookDefinition,
 	type RawHookGroup,
 } from "./types.ts";
+import { invalidMatcher } from "./matcher.ts";
 
 export const DEFAULT_OPTIONS: ClaudeHooksOptions = {
 	enabled: true,
@@ -76,9 +77,19 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 	}
 
 	const result: LoadResult = { hooks: [], sources: [], warnings: [] };
-	const seen = new Set<string>();
+	if (process.env.CLAUDE_CONFIG_DIR) result.warnings.push("CLAUDE_CONFIG_DIR is not supported; using the standard Claude settings locations");
+	const standardFiles = files.slice(0, options.loadUserSettings ? 3 : 2);
+	let disableAllHooks: boolean | undefined;
+	for (const file of standardFiles) {
+		if (!existsSync(file)) continue;
+		const parsed = readJson(file);
+		if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && typeof (parsed as Record<string, unknown>).disableAllHooks === "boolean") {
+			disableAllHooks = (parsed as Record<string, unknown>).disableAllHooks as boolean;
+		}
+	}
+	result.disabled = disableAllHooks === true;
 	const warnedTypes = new Set<string>();
-
+	const warnedMatchers = new Set<string>();
 	for (const file of files) {
 		if (!existsSync(file)) continue;
 		const parsed = readJson(file);
@@ -86,6 +97,8 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 			result.warnings.push(`Could not parse ${file}, skipping`);
 			continue;
 		}
+		warnUnsupported(parsed, file, result.warnings);
+		if (result.disabled && !standardFiles.includes(file)) continue;
 		const hooksSection = extractHooksSection(parsed);
 		if (!hooksSection) continue;
 		result.sources.push(file);
@@ -105,9 +118,11 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 						continue;
 					}
 					if (typeof def.command !== "string" || def.command.trim() === "") continue;
-					const key = `${event}\u0000${matcher ?? ""}\u0000${def.command}`;
-					if (seen.has(key)) continue;
-					seen.add(key);
+					const invalid = invalidMatcher(matcher);
+					if (invalid && !warnedMatchers.has(invalid)) {
+						warnedMatchers.add(invalid);
+						result.warnings.push(`Invalid hook matcher regex "${invalid}"; it matches no tools (first seen in ${file})`);
+					}
 					const timeoutSeconds = typeof def.timeout === "number" && def.timeout > 0 ? def.timeout : undefined;
 					result.hooks.push({
 						event,
@@ -120,7 +135,24 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 			}
 		}
 	}
+	if (result.disabled) result.hooks = [];
 	return result;
+}
+
+function warnUnsupported(parsed: unknown, file: string, warnings: string[]): void {
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+	const obj = parsed as Record<string, unknown>;
+	const unsupported: Array<[string, string]> = [
+		["managed", "managed settings"],
+		["managedSettings", "managed settings"],
+		["allowManagedHooksOnly", "managed settings"],
+		["cliSettings", "CLI settings"],
+		["plugins", "plugins"],
+		["skills", "skills"],
+	];
+	for (const [key, label] of unsupported) {
+		if (key in obj) warnings.push(`${label} in ${file} are not supported by pi-claude-hooks`);
+	}
 }
 
 function defaultTimeoutFor(event: string, options: ClaudeHooksOptions): number {
