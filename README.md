@@ -56,7 +56,8 @@ Put options in `~/.pi/agent/claude-hooks.json` or `<project>/.pi/claude-hooks.js
   "defaultTimeoutSeconds": 600,
   "sessionEndTimeoutSeconds": 1.5,
   "shell": "/bin/bash",
-  "verbose": false
+  "verbose": false,
+  "startupSummary": "compact"
 }
 ```
 
@@ -71,6 +72,37 @@ Put options in `~/.pi/agent/claude-hooks.json` or `<project>/.pi/claude-hooks.js
 | `verbose` | `false` | Log every hook run and exit code. |
 
 Environment variables for quick overrides: `PI_CLAUDE_HOOKS_EXTRA_FILES` (comma separated globs), `PI_CLAUDE_HOOKS_VERBOSE=1`, `PI_CLAUDE_HOOKS_DISABLED=1`.
+
+## Startup summary
+
+When a session starts, the extension adds a `[Claude hooks]` block to the chat in the same style as pi's own `[Skills]` and `[Extensions]` sections.
+
+```
+[Claude hooks]
+  SessionStart (1), PreToolUse (3), PostToolUse (1)
+```
+
+Press the expand shortcut (the one that expands tool output) to see every hook grouped by source file, with its matcher and a shortened command:
+
+```
+[Claude hooks]
+  ~/.claude/settings.json
+    SessionStart [startup] bash ~/.claude/hooks/agent-state.sh session
+  ~/projects/app/.claude/settings.json
+    PreToolUse [Bash] if jq -re '.tool_input.command // empty' | grep -qE '(rm\s+(-[a-z]*...
+    PreToolUse [Edit|Write] p=$(jq -re '.tool_input.file_path // empty') || exit 0; root=...
+    PostToolUse [Edit|Write] if jq -re 'select((.tool_input.file_path // "") | (test("(co...
+```
+
+Set `startupSummary` in the options file:
+
+| Value | Behaviour |
+| --- | --- |
+| `"compact"` | Default. Event names with counts. Expands on demand. |
+| `"full"` | Always show the grouped list. |
+| `"off"` | Show nothing. |
+
+The block is a pi custom entry. It is stored in the session file but never sent to the model. It appears once per session: resuming a session does not add another one, and nothing is shown when no hooks loaded or when pi runs without a UI (print and JSON modes).
 
 ## Commands
 
