@@ -128,7 +128,7 @@ The block is a pi custom entry. It is stored in the session file but never sent 
 
 Session source mapping: pi `startup` and `reload` become `startup`, `new` becomes `clear`, `resume` stays `resume`, `fork` stays `fork`. Session end reasons: pi `new` becomes `clear`, `resume` stays `resume`, everything else becomes `other`.
 
-Matchers follow Claude Code rules and are case-insensitive. A matcher made of names separated by `|` or `,` is an exact list. Anything else is a regular expression. Empty, missing or `*` matches everything.
+Matchers follow Claude Code rules and are case-sensitive. Known tool names and names separated by `|` or `,` are exact, trimmed alternatives; anything else is an unanchored, case-sensitive JavaScript regular expression. Pi and Claude tool aliases are tested as separate candidates. Empty, missing or `*` matches everything.
 
 ## Tool name and field normalisation
 
