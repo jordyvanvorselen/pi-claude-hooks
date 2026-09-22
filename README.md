@@ -10,9 +10,16 @@ Install the package:
 pi install git:github.com/jordyvanvorselen/pi-claude-hooks
 ```
 
+Or install from a local checkout:
+
+```bash
+pi install /path/to/pi-claude-hooks
+```
+
 Or try it for one run without installing:
 
 ```bash
+pi -e git:github.com/jordyvanvorselen/pi-claude-hooks
 pi -e /path/to/pi-claude-hooks
 ```
 
