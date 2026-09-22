@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if jq -re '.tool_input.command // empty' | grep -qE '(rm\\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)\\s+[/.]|DROP\\s+(TABLE|DATABASE|SCHEMA)|TRUNCATE\\s)'; then echo 'BLOCKED: Dangerous destructive command detected. Refusing to execute.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "p=$(jq -re '.tool_input.file_path // empty') || exit 0; root=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; case \"$p\" in /*) abs=\"$p\" ;; *) abs=\"$root/$p\" ;; esac; abs=$(realpath -m \"$abs\" 2>/dev/null) || exit 0; case \"$abs\" in \"$root\"/*) rel=\"${abs#\"$root\"/}\" ;; *) exit 0 ;; esac; case \"$rel\" in .claude/skills/*|.claude/rules/*|.claude/agents/*|.claude/hooks/*|.claude/apm-hooks.json|.claude/settings.json|.codex/skills/*|.codex/rules/*|.codex/agents/*|.codex/hooks/*|.codex/hooks.json|.cursor/skills/*|.cursor/rules/*|.cursor/agents/*|.cursor/hooks/*|.cursor/hooks.json|.agents/skills/*) echo 'BLOCKED: That path is an APM deploy target and is overwritten by ai/sync.sh, so the edit would be lost. Edit the source in ai/.apm/ instead: skills in ai/.apm/skills/, agents in ai/.apm/agents/, rules and instructions in ai/.apm/instructions/, hooks in ai/.apm/hooks/.' >&2; exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if jq -re '.tool_input.file_path // empty' | grep -qE 'connect-portal/src/shared/generated/|connect-backend/api-docs/'; then echo 'BLOCKED: Do not edit generated files in connect-portal/src/shared/generated/ or connect-backend/api-docs/. Invoke skill /generate-api-client to regenerate.' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if jq -re 'select((.tool_input.file_path // \"\") | (test(\"(connect-backend|panel-event-processor|data-export|fake-panel)/src/.*\\\\.java$|panel-protocol/.*\\\\.java$|connect-portal/src/.*\\\\.(ts|tsx|scss)$|connect-toolbox/(lib|test)/.*\\\\.dart$|\\\\.(ya?ml|tf|tfvars|sh|cjs|mjs)$|(^|/)Dockerfile[^/]*$|\\\\.githooks/\") and (test(\"shared/generated|connect-toolbox/lib/l10n|node_modules/|\\\\.terraform/|\\\\.next/|\\\\.yarn/\") | not))) | .tool_input.new_string // .tool_input.content // empty' | grep -E '^[[:space:]]*(//|\\\\{?/\\\\*|#)' | grep -vE '^[[:space:]]*#!' | grep -qivE 'hack|workaround|todo|fixme|eslint|ts-expect-error|ts-ignore|prettier-ignore|nosonar|sonar|jacoco|S2095|checkov|tflint|hadolint|shellcheck|syntax='; then echo 'Comment detected in AI-written code or infrastructure. Project rule: do not write code comments, and the same reasoning covers YAML, GitHub Actions, Terraform, Dockerfiles and scripts. Prefer self-explanatory code and config; encode the rationale where something enforces it: a test name plus AssertJ .as description in Java, the workflow or job name, or the PR body. A comment may stay only when the user explicitly asked for one, or when it names a genuine hack, non-obvious workaround, or tool directive (shebang, checkov/sonar suppression, pinned-action version).' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "pi-claude-hooks",
+  "version": "0.1.0",
+  "description": "Run Claude Code hooks from .claude/ inside pi",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "claude-code",
+    "hooks"
+  ],
+  "license": "MIT",
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/claude-hooks.ts"
+    ]
+  },
+  "scripts": {
+    "test": "node --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.6"
+  }
+}
