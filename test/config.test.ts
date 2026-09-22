@@ -136,3 +136,12 @@ test("loadOptions reads project override file and env var", () => {
 		delete process.env.PI_CLAUDE_HOOKS_EXTRA_FILES;
 	}
 });
+
+test("startupSummary option accepts only known modes", () => {
+	const { home, projectDir } = makeProject({});
+	mkdirSync(join(projectDir, ".pi"), { recursive: true });
+	writeFileSync(join(projectDir, ".pi", "claude-hooks.json"), JSON.stringify({ startupSummary: "full" }));
+	assert.equal(loadOptions(projectDir, home).startupSummary, "full");
+	writeFileSync(join(projectDir, ".pi", "claude-hooks.json"), JSON.stringify({ startupSummary: "bogus" }));
+	assert.equal(loadOptions(projectDir, home).startupSummary, "compact");
+});

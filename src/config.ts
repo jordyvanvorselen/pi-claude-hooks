@@ -18,6 +18,7 @@ export const DEFAULT_OPTIONS: ClaudeHooksOptions = {
 	sessionEndTimeoutSeconds: 1.5,
 	shell: undefined,
 	verbose: false,
+	startupSummary: "compact",
 };
 
 const SETTINGS_FILES = ["settings.json", "settings.local.json"];
@@ -58,6 +59,9 @@ function pickOptions(raw: Record<string, unknown>): Partial<ClaudeHooksOptions> 
 	if (typeof raw.sessionEndTimeoutSeconds === "number") out.sessionEndTimeoutSeconds = raw.sessionEndTimeoutSeconds;
 	if (typeof raw.shell === "string") out.shell = raw.shell;
 	if (typeof raw.verbose === "boolean") out.verbose = raw.verbose;
+	if (raw.startupSummary === "compact" || raw.startupSummary === "full" || raw.startupSummary === "off") {
+		out.startupSummary = raw.startupSummary;
+	}
 	return out;
 }
 

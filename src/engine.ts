@@ -1,6 +1,7 @@
 import { matcherMatches } from "./matcher.ts";
 import { type HookOutcome, interpretResults, parseHookJson } from "./output.ts";
 import { runCommandHook } from "./runner.ts";
+import { buildSummary, formatForCommand, type HooksSummary } from "./summary.ts";
 import type { ClaudeHooksOptions, HookRunResult, LoadResult, LoadedHook } from "./types.ts";
 
 export interface RunContext {
@@ -50,30 +51,11 @@ export class ClaudeHooksEngine {
 		return interpretResults(event, results);
 	}
 
-	summary(): string[] {
-		const lines: string[] = [];
-		if (this.loaded.sources.length === 0) {
-			lines.push("No Claude Code hook files found.");
-		} else {
-			lines.push("Sources:");
-			for (const s of this.loaded.sources) lines.push(`  ${s}`);
-		}
-		const byEvent = new Map<string, LoadedHook[]>();
-		for (const h of this.loaded.hooks) {
-			const list = byEvent.get(h.event) ?? [];
-			list.push(h);
-			byEvent.set(h.event, list);
-		}
-		lines.push(`Hooks: ${this.loaded.hooks.length}`);
-		for (const [event, hooks] of byEvent) {
-			lines.push(`  ${event} (${hooks.length})`);
-			for (const h of hooks) {
-				const matcher = h.matcher === undefined ? "*" : h.matcher || "*";
-				const cmd = h.command.length > 70 ? `${h.command.slice(0, 67)}...` : h.command;
-				lines.push(`    [${matcher}] ${cmd}`);
-			}
-		}
-		for (const w of this.loaded.warnings) lines.push(`Warning: ${w}`);
-		return lines;
+	summary(): HooksSummary {
+		return buildSummary(this.loaded);
+	}
+
+	summaryText(): string {
+		return formatForCommand(this.summary());
 	}
 }

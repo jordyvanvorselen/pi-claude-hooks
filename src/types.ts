@@ -96,7 +96,10 @@ export interface ClaudeHooksOptions {
 	sessionEndTimeoutSeconds: number;
 	shell: string | undefined;
 	verbose: boolean;
+	startupSummary: StartupSummaryMode;
 }
+
+export type StartupSummaryMode = "compact" | "full" | "off";
 
 export interface LoadResult {
 	hooks: LoadedHook[];
