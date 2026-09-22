@@ -1,7 +1,9 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
 import { loadClaudeHooks, loadOptions } from "../src/config.ts";
 import { ClaudeHooksEngine, type RunContext } from "../src/engine.ts";
 import type { HookOutcome } from "../src/output.ts";
+import { formatCompact, formatExpanded, type HooksSummary, SUMMARY_ENTRY_TYPE, shouldAppendSummary } from "../src/summary.ts";
 import { claudeToolName, fromClaudeToolInput, replaceInputInPlace, toClaudeToolInput, toolNameCandidates } from "../src/tools.ts";
 import type { HookRunResult, LoadedHook } from "../src/types.ts";
 
@@ -97,8 +99,34 @@ export default function claudeHooks(pi: ExtensionAPI) {
 		return outcome;
 	}
 
+	pi.registerEntryRenderer<HooksSummary>(SUMMARY_ENTRY_TYPE, (entry, { expanded }, theme) => {
+		const summary = entry.data;
+		if (!summary || summary.total === 0) return undefined;
+		const style = {
+			header: (t: string) => theme.fg("mdHeading", t),
+			source: (t: string) => theme.fg("accent", t),
+			dim: (t: string) => theme.fg("dim", t),
+			warning: (t: string) => theme.fg("warning", t),
+		};
+		const full = expanded || getEngineOptions().startupSummary === "full";
+		return new Text(full ? formatExpanded(summary, style) : formatCompact(summary, style), 0, 0);
+	});
+
+	function getEngineOptions() {
+		return engine?.options ?? loadOptions(projectDir);
+	}
+
+	function appendStartupSummary(ctx: ExtensionContext, eng: ClaudeHooksEngine) {
+		const existing = ctx.sessionManager.getEntries().filter((e) => e.type === "custom" && e.customType === SUMMARY_ENTRY_TYPE);
+		if (!shouldAppendSummary({ hasUI: ctx.hasUI, mode: eng.options.startupSummary, hookCount: eng.hooks.length, existing: existing.length })) {
+			return;
+		}
+		pi.appendEntry<HooksSummary>(SUMMARY_ENTRY_TYPE, eng.summary());
+	}
+
 	pi.on("session_start", async (event, ctx) => {
 		const eng = reload(ctx, false);
+		appendStartupSummary(ctx, eng);
 		pendingPromptContext = [];
 		pendingToolContext.clear();
 		stopHookActive = false;
@@ -246,7 +274,7 @@ export default function claudeHooks(pi: ExtensionAPI) {
 		description: "List Claude Code hooks loaded from .claude/",
 		handler: async (_args, ctx) => {
 			const eng = getEngine(ctx);
-			notify(ctx, eng.summary().join("\n"));
+			notify(ctx, eng.summaryText());
 		},
 	});
 
