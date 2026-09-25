@@ -7,7 +7,7 @@ Run your Claude Code hooks inside [pi](https://pi.dev). The extension reads the 
 Install the package:
 
 ```bash
-pi install git:github.com/jordyvanvorselen/pi-claude-hooks
+pi install npm:@jordyvanvorselen/pi-claude-hooks
 ```
 
 Or install from a local checkout:
@@ -19,7 +19,7 @@ pi install /path/to/pi-claude-hooks
 Or try it for one run without installing:
 
 ```bash
-pi -e git:github.com/jordyvanvorselen/pi-claude-hooks
+pi -e npm:@jordyvanvorselen/pi-claude-hooks
 pi -e /path/to/pi-claude-hooks
 ```
 

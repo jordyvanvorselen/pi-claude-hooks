@@ -1,5 +1,5 @@
 {
-  "name": "pi-claude-hooks",
+  "name": "@jordyvanvorselen/pi-claude-hooks",
   "version": "0.1.0",
   "description": "Run Claude Code hooks from .claude/ inside pi",
   "type": "module",
@@ -13,7 +13,8 @@
   "files": [
     "extensions",
     "src",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "pi": {
     "extensions": [
@@ -22,7 +23,8 @@
   },
   "scripts": {
     "test": "node --test 'test/**/*.test.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
@@ -34,5 +36,13 @@
   },
   "engines": {
     "node": ">=22.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Jordy van Vorselen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordyvanvorselen/pi-claude-hooks.git"
   }
 }
