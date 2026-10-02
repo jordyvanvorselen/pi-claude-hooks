@@ -53,7 +53,14 @@ export function matcherMatches(matcher: string | undefined, candidates: string[]
 export function invalidMatcher(matcher: string | undefined): string | undefined {
 	if (matcher === undefined) return undefined;
 	const trimmed = matcher.trim();
-	if (!trimmed || trimmed === "*" || trimmed.includes("|") || trimmed.includes(",") || RESTRICTED_TOOL_NAMES.has(trimmed)) return undefined;
+	if (
+		!trimmed ||
+		trimmed === "*" ||
+		trimmed.includes("|") ||
+		trimmed.includes(",") ||
+		RESTRICTED_TOOL_NAMES.has(trimmed)
+	)
+		return undefined;
 	try {
 		new RegExp(trimmed);
 		return undefined;

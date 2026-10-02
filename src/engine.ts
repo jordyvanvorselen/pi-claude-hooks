@@ -26,10 +26,17 @@ export class ClaudeHooksEngine {
 	}
 
 	hooksFor(event: string, candidates?: string[]): LoadedHook[] {
-		return this.loaded.hooks.filter((h) => h.event === event && (candidates === undefined || matcherMatches(h.matcher, candidates)));
+		return this.loaded.hooks.filter(
+			(h) => h.event === event && (candidates === undefined || matcherMatches(h.matcher, candidates)),
+		);
 	}
 
-	async run(event: string, candidates: string[] | undefined, payload: Record<string, unknown>, ctx: RunContext): Promise<HookOutcome> {
+	async run(
+		event: string,
+		candidates: string[] | undefined,
+		payload: Record<string, unknown>,
+		ctx: RunContext,
+	): Promise<HookOutcome> {
 		const hooks = this.hooksFor(event, candidates);
 		if (hooks.length === 0) return interpretResults(event, []);
 		const stdin = JSON.stringify(payload);

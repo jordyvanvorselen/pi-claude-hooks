@@ -96,7 +96,10 @@ test("edit to an APM deploy target is blocked when GNU realpath is available", a
 	const outcome = await engine.run(
 		"PreToolUse",
 		toolNameCandidates("edit"),
-		payload(projectDir, "PreToolUse", "edit", { path: ".claude/skills/foo/SKILL.md", edits: [{ oldText: "a", newText: "b" }] }),
+		payload(projectDir, "PreToolUse", "edit", {
+			path: ".claude/skills/foo/SKILL.md",
+			edits: [{ oldText: "a", newText: "b" }],
+		}),
 		runCtx(projectDir),
 	);
 	assert.equal(outcome.blocked, true);
@@ -120,7 +123,10 @@ test("edit to a normal file is allowed", async () => {
 	const outcome = await engine.run(
 		"PreToolUse",
 		toolNameCandidates("edit"),
-		payload(projectDir, "PreToolUse", "edit", { path: "connect-portal/src/app.ts", edits: [{ oldText: "a", newText: "b" }] }),
+		payload(projectDir, "PreToolUse", "edit", {
+			path: "connect-portal/src/app.ts",
+			edits: [{ oldText: "a", newText: "b" }],
+		}),
 		runCtx(projectDir),
 	);
 	assert.equal(outcome.blocked, false);
@@ -147,7 +153,10 @@ test("PostToolUse comment warning fires on write content", async () => {
 	const outcome = await engine.run(
 		"PostToolUse",
 		toolNameCandidates("write"),
-		payload(projectDir, "PostToolUse", "write", { path: "connect-backend/src/main/java/App.java", content: "// hello\nclass App {}" }),
+		payload(projectDir, "PostToolUse", "write", {
+			path: "connect-backend/src/main/java/App.java",
+			content: "// hello\nclass App {}",
+		}),
 		runCtx(projectDir),
 	);
 	assert.equal(outcome.feedback.length, 2);
@@ -158,7 +167,10 @@ test("PostToolUse comment warning stays quiet for comment-free code", async () =
 	const outcome = await engine.run(
 		"PostToolUse",
 		toolNameCandidates("write"),
-		payload(projectDir, "PostToolUse", "write", { path: "connect-backend/src/main/java/App.java", content: "class App {}" }),
+		payload(projectDir, "PostToolUse", "write", {
+			path: "connect-backend/src/main/java/App.java",
+			content: "class App {}",
+		}),
 		runCtx(projectDir),
 	);
 	assert.deepEqual(outcome.feedback, []);
@@ -174,7 +186,10 @@ test("edit outside the project root is not treated as a deploy target", async (t
 	const outcome = await engine.run(
 		"PreToolUse",
 		toolNameCandidates("edit"),
-		payload(projectDir, "PreToolUse", "edit", { path: "/tmp/elsewhere/.claude/skills/foo/SKILL.md", edits: [{ oldText: "a", newText: "b" }] }),
+		payload(projectDir, "PreToolUse", "edit", {
+			path: "/tmp/elsewhere/.claude/skills/foo/SKILL.md",
+			edits: [{ oldText: "a", newText: "b" }],
+		}),
 		runCtx(projectDir),
 	);
 	assert.equal(outcome.blocked, false);

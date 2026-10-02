@@ -4,7 +4,13 @@ import { loadClaudeHooks, loadOptions } from "../src/config.ts";
 import { buildToolCallPayload, buildToolResultPayload } from "../src/payload.ts";
 import { ClaudeHooksEngine, type RunContext } from "../src/engine.ts";
 import type { HookOutcome } from "../src/output.ts";
-import { formatCompact, formatExpanded, type HooksSummary, SUMMARY_ENTRY_TYPE, shouldAppendSummary } from "../src/summary.ts";
+import {
+	formatCompact,
+	formatExpanded,
+	type HooksSummary,
+	SUMMARY_ENTRY_TYPE,
+	shouldAppendSummary,
+} from "../src/summary.ts";
 import { fromClaudeToolInput, replaceInputInPlace, toolNameCandidates } from "../src/tools.ts";
 import type { HookRunResult, LoadedHook } from "../src/types.ts";
 
@@ -75,9 +81,12 @@ export default function claudeHooks(pi: ExtensionAPI) {
 			cwd: ctx.cwd,
 			env: buildEnv(ctx),
 			signal: ctx.signal,
-			onStart: verbose ? (hook: LoadedHook) => notify(ctx, `Running ${hook.event} hook: ${shorten(hook.command)}`) : undefined,
+			onStart: verbose
+				? (hook: LoadedHook) => notify(ctx, `Running ${hook.event} hook: ${shorten(hook.command)}`)
+				: undefined,
 			onResult: verbose
-				? (r: HookRunResult) => notify(ctx, `${r.hook.event} hook exited ${r.code}${r.stderr.trim() ? `: ${r.stderr.trim()}` : ""}`)
+				? (r: HookRunResult) =>
+						notify(ctx, `${r.hook.event} hook exited ${r.code}${r.stderr.trim() ? `: ${r.stderr.trim()}` : ""}`)
 				: undefined,
 		};
 	}
@@ -118,8 +127,17 @@ export default function claudeHooks(pi: ExtensionAPI) {
 	}
 
 	function appendStartupSummary(ctx: ExtensionContext, eng: ClaudeHooksEngine) {
-		const existing = ctx.sessionManager.getEntries().filter((e) => e.type === "custom" && e.customType === SUMMARY_ENTRY_TYPE);
-		if (!shouldAppendSummary({ hasUI: ctx.hasUI, mode: eng.options.startupSummary, hookCount: eng.hooks.length, existing: existing.length })) {
+		const existing = ctx.sessionManager
+			.getEntries()
+			.filter((e) => e.type === "custom" && e.customType === SUMMARY_ENTRY_TYPE);
+		if (
+			!shouldAppendSummary({
+				hasUI: ctx.hasUI,
+				mode: eng.options.startupSummary,
+				hookCount: eng.hooks.length,
+				existing: existing.length,
+			})
+		) {
 			return;
 		}
 		pi.appendEntry<HooksSummary>(SUMMARY_ENTRY_TYPE, eng.summary());
@@ -260,7 +278,10 @@ export default function claudeHooks(pi: ExtensionAPI) {
 
 	pi.on("session_before_compact", async (event, ctx) => {
 		const trigger = event.reason === "manual" ? "manual" : "auto";
-		const outcome = await runEvent(ctx, "PreCompact", [trigger], { trigger, custom_instructions: event.customInstructions ?? "" });
+		const outcome = await runEvent(ctx, "PreCompact", [trigger], {
+			trigger,
+			custom_instructions: event.customInstructions ?? "",
+		});
 		if (!outcome) return;
 		if (outcome.blocked) {
 			notify(ctx, `Compaction blocked by hook${outcome.blockReason ? `: ${outcome.blockReason}` : ""}`, "warning");
@@ -271,7 +292,10 @@ export default function claudeHooks(pi: ExtensionAPI) {
 
 	pi.on("session_compact", async (event, ctx) => {
 		const trigger = event.reason === "manual" ? "manual" : "auto";
-		await runEvent(ctx, "PostCompact", [trigger], { trigger, compaction_summary: event.compactionEntry?.summary ?? "" });
+		await runEvent(ctx, "PostCompact", [trigger], {
+			trigger,
+			compaction_summary: event.compactionEntry?.summary ?? "",
+		});
 	});
 
 	pi.registerCommand("claude-hooks", {
@@ -330,7 +354,10 @@ function lastAssistantText(messages: readonly unknown[]): string {
 		if (typeof m.content === "string") return m.content;
 		if (Array.isArray(m.content)) {
 			return m.content
-				.filter((c): c is { type: "text"; text: string } => !!c && typeof c === "object" && (c as { type?: string }).type === "text")
+				.filter(
+					(c): c is { type: "text"; text: string } =>
+						!!c && typeof c === "object" && (c as { type?: string }).type === "text",
+				)
 				.map((c) => c.text)
 				.join("\n");
 		}

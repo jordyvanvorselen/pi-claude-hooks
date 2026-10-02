@@ -28,7 +28,7 @@ const loaded: LoadResult = {
 		hook("PreToolUse", "/proj/.claude/settings.json", "Edit|Write"),
 		hook("PostToolUse", "/proj/.claude/settings.json", undefined, "x".repeat(100)),
 	],
-	warnings: ["Hook type \"prompt\" is not supported"],
+	warnings: ['Hook type "prompt" is not supported'],
 };
 
 test("summary counts hooks per event in load order", () => {
@@ -43,7 +43,10 @@ test("summary groups hooks by source with home shortened and commands truncated"
 		s.sources.map((src) => src.path),
 		["~/.claude/settings.json", "/proj/.claude/settings.json", "/proj/.claude/empty.json"],
 	);
-	assert.deepEqual(s.sources[1].hooks.map((h) => h.matcher), ["PreToolUse [Bash]", "PreToolUse [Edit|Write]", "PostToolUse [*]"]);
+	assert.deepEqual(
+		s.sources[1].hooks.map((h) => h.matcher),
+		["PreToolUse [Bash]", "PreToolUse [Edit|Write]", "PostToolUse [*]"],
+	);
 	assert.equal(s.sources[1].hooks[2].command.length, 70);
 	assert.deepEqual(s.sources[2].hooks, []);
 });
@@ -75,7 +78,10 @@ test("style callbacks wrap header, source, body and warning lines", () => {
 });
 
 test("command output reports when nothing was found", () => {
-	assert.equal(formatForCommand(buildSummary({ sources: [], hooks: [], warnings: [] })), "No Claude Code hook files found.");
+	assert.equal(
+		formatForCommand(buildSummary({ sources: [], hooks: [], warnings: [] })),
+		"No Claude Code hook files found.",
+	);
 	assert.match(formatForCommand(buildSummary(loaded, "/home/me")), /Total: 4$/);
 });
 

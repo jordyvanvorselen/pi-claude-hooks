@@ -33,6 +33,9 @@ test("regex matchers are unanchored and case-sensitive", () => {
 
 test("invalid regex never matches and warns", () => {
 	let warning = "";
-	assert.equal(matcherMatches("Bash(", ["Bash("], (message) => (warning = message)), false);
+	assert.equal(
+		matcherMatches("Bash(", ["Bash("], (message) => (warning = message)),
+		false,
+	);
 	assert.match(warning, /Invalid/);
 });
