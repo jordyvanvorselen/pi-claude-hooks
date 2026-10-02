@@ -8,10 +8,14 @@ import { runCommandHook } from "../src/runner.ts";
 const base = { cwd: tmpdir(), env: { ...process.env, CLAUDE_PROJECT_DIR: "/proj" } };
 
 test("hook receives the payload on stdin and the env vars", async () => {
-	const r = await runCommandHook("jq -r .tool_input.file_path; echo $CLAUDE_PROJECT_DIR", '{"tool_input":{"file_path":"a.ts"}}', {
-		...base,
-		timeoutMs: 5000,
-	});
+	const r = await runCommandHook(
+		"jq -r .tool_input.file_path; echo $CLAUDE_PROJECT_DIR",
+		'{"tool_input":{"file_path":"a.ts"}}',
+		{
+			...base,
+			timeoutMs: 5000,
+		},
+	);
 	assert.equal(r.code, 0);
 	assert.equal(r.stdout, "a.ts\n/proj\n");
 });

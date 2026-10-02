@@ -69,7 +69,8 @@ export function formatExpanded(summary: HooksSummary, style: SummaryStyle): stri
 	const lines = [style.header("[Claude hooks]")];
 	for (const source of summary.sources) {
 		lines.push(`  ${style.source(source.path)}`);
-		if (source.hooks.length === 0) lines.push(style.dim("    (no new hooks, duplicates of an earlier file or unsupported types)"));
+		if (source.hooks.length === 0)
+			lines.push(style.dim("    (no new hooks, duplicates of an earlier file or unsupported types)"));
 		for (const h of source.hooks) lines.push(style.dim(`    ${h.matcher} ${h.command}`));
 	}
 	for (const w of summary.warnings) lines.push(style.warning(`  Warning: ${w}`));

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { claudeToolName, fromClaudeToolInput, replaceInputInPlace, toClaudeToolInput, toolNameCandidates } from "../src/tools.ts";
+import {
+	claudeToolName,
+	fromClaudeToolInput,
+	replaceInputInPlace,
+	toClaudeToolInput,
+	toolNameCandidates,
+} from "../src/tools.ts";
 
 test("pi tool names map to Claude Code names", () => {
 	assert.equal(claudeToolName("bash"), "Bash");
@@ -80,7 +86,11 @@ test("updatedInput new_string with multiple edits warns and keeps edits", () => 
 			{ oldText: "p", newText: "q" },
 		],
 	};
-	const mapped = fromClaudeToolInput("edit", original, { file_path: "a.ts", old_string: "x\np", new_string: "changed" });
+	const mapped = fromClaudeToolInput("edit", original, {
+		file_path: "a.ts",
+		old_string: "x\np",
+		new_string: "changed",
+	});
 	assert.equal(mapped.warnings.length, 1);
 	assert.deepEqual(mapped.input.edits, original.edits);
 	assert.equal("new_string" in mapped.input, false);

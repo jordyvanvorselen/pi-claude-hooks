@@ -3,8 +3,20 @@ import { test } from "node:test";
 import { buildToolCallPayload, buildToolResultPayload } from "../src/payload.ts";
 
 test("tool result payload preserves Pi blocks and details", () => {
-	const content = [{ type: "text", text: "ok" }, { type: "image", data: "abc", mimeType: "image/png" }];
-	const payload = buildToolResultPayload({}, "bash", { command: "true" }, "call-1", content, { exitCode: 0 }, false, false);
+	const content = [
+		{ type: "text", text: "ok" },
+		{ type: "image", data: "abc", mimeType: "image/png" },
+	];
+	const payload = buildToolResultPayload(
+		{},
+		"bash",
+		{ command: "true" },
+		"call-1",
+		content,
+		{ exitCode: 0 },
+		false,
+		false,
+	);
 	assert.equal((payload.tool_response as Record<string, unknown>).output, "ok\n[image]");
 	assert.deepEqual((payload.tool_response as Record<string, unknown>).content, content);
 	assert.deepEqual((payload.tool_response as Record<string, unknown>).details, { exitCode: 0 });
@@ -12,7 +24,16 @@ test("tool result payload preserves Pi blocks and details", () => {
 });
 
 test("failure payload infers interrupts without inventing fields", () => {
-	const payload = buildToolResultPayload({}, "bash", {}, "call-1", [{ type: "text", text: "Command aborted" }], undefined, true, false);
+	const payload = buildToolResultPayload(
+		{},
+		"bash",
+		{},
+		"call-1",
+		[{ type: "text", text: "Command aborted" }],
+		undefined,
+		true,
+		false,
+	);
 	assert.deepEqual(payload, {
 		tool_name: "Bash",
 		pi_tool_name: "bash",

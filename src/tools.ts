@@ -64,7 +64,9 @@ export function fromClaudeToolInput(piToolName: string, original: Input, updated
 
 	if (piToolName === "edit") {
 		const originalEdits = Array.isArray(original.edits) ? (original.edits as EditEntry[]) : [];
-		const edits = Array.isArray(out.edits) ? (out.edits as EditEntry[]).map((e) => ({ ...e })) : originalEdits.map((e) => ({ ...e }));
+		const edits = Array.isArray(out.edits)
+			? (out.edits as EditEntry[]).map((e) => ({ ...e }))
+			: originalEdits.map((e) => ({ ...e }));
 		const oldJoined = originalEdits.map((e) => stringOrEmpty(e?.oldText)).join("\n");
 		const newJoined = originalEdits.map((e) => stringOrEmpty(e?.newText)).join("\n");
 		const oldChanged = typeof out.old_string === "string" && out.old_string !== oldJoined;

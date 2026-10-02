@@ -5,7 +5,6 @@ import {
 	type ClaudeHooksOptions,
 	KNOWN_EVENT_NAMES,
 	type LoadResult,
-	type LoadedHook,
 	type RawHookDefinition,
 	type RawHookGroup,
 } from "./types.ts";
@@ -77,13 +76,19 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 	}
 
 	const result: LoadResult = { hooks: [], sources: [], warnings: [] };
-	if (process.env.CLAUDE_CONFIG_DIR) result.warnings.push("CLAUDE_CONFIG_DIR is not supported; using the standard Claude settings locations");
+	if (process.env.CLAUDE_CONFIG_DIR)
+		result.warnings.push("CLAUDE_CONFIG_DIR is not supported; using the standard Claude settings locations");
 	const standardFiles = files.slice(0, options.loadUserSettings ? 3 : 2);
 	let disableAllHooks: boolean | undefined;
 	for (const file of standardFiles) {
 		if (!existsSync(file)) continue;
 		const parsed = readJson(file);
-		if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && typeof (parsed as Record<string, unknown>).disableAllHooks === "boolean") {
+		if (
+			parsed &&
+			typeof parsed === "object" &&
+			!Array.isArray(parsed) &&
+			typeof (parsed as Record<string, unknown>).disableAllHooks === "boolean"
+		) {
 			disableAllHooks = (parsed as Record<string, unknown>).disableAllHooks as boolean;
 		}
 	}
@@ -113,7 +118,9 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 					if (type !== "command") {
 						if (!warnedTypes.has(type)) {
 							warnedTypes.add(type);
-							result.warnings.push(`Hook type "${type}" is not supported, only "command" hooks run (first seen in ${file})`);
+							result.warnings.push(
+								`Hook type "${type}" is not supported, only "command" hooks run (first seen in ${file})`,
+							);
 						}
 						continue;
 					}
@@ -121,7 +128,9 @@ export function loadClaudeHooks(paths: LoadPaths, options: ClaudeHooksOptions): 
 					const invalid = invalidMatcher(matcher);
 					if (invalid && !warnedMatchers.has(invalid)) {
 						warnedMatchers.add(invalid);
-						result.warnings.push(`Invalid hook matcher regex "${invalid}"; it matches no tools (first seen in ${file})`);
+						result.warnings.push(
+							`Invalid hook matcher regex "${invalid}"; it matches no tools (first seen in ${file})`,
+						);
 					}
 					const timeoutSeconds = typeof def.timeout === "number" && def.timeout > 0 ? def.timeout : undefined;
 					result.hooks.push({

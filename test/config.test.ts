@@ -53,7 +53,10 @@ test("disableAllHooks uses local, then project, then user precedence", () => {
 	});
 	const enabled = loadClaudeHooks({ home, projectDir, includeProject: true }, DEFAULT_OPTIONS);
 	assert.equal(enabled.disabled, false);
-	assert.deepEqual(enabled.hooks.map((h) => h.command), ["echo user", "echo project", "echo local", "echo extra"]);
+	assert.deepEqual(
+		enabled.hooks.map((h) => h.command),
+		["echo user", "echo project", "echo local", "echo extra"],
+	);
 	writeFileSync(join(projectDir, ".claude", "settings.local.json"), JSON.stringify({ disableAllHooks: true }));
 	const disabled = loadClaudeHooks({ home, projectDir, includeProject: true }, DEFAULT_OPTIONS);
 	assert.equal(disabled.disabled, true);
@@ -94,7 +97,10 @@ test("extra file glob is configurable", () => {
 		".claude/apm-hooks.json": { PreToolUse: [hook("echo apm")] },
 		".claude/other.json": { hooks: { PreToolUse: [hook("echo other")] } },
 	});
-	const only = loadClaudeHooks({ home, projectDir, includeProject: true }, { ...DEFAULT_OPTIONS, extraFiles: ["apm-*.json"] });
+	const only = loadClaudeHooks(
+		{ home, projectDir, includeProject: true },
+		{ ...DEFAULT_OPTIONS, extraFiles: ["apm-*.json"] },
+	);
 	assert.deepEqual(
 		only.hooks.map((h) => h.command),
 		["echo apm"],
@@ -109,8 +115,14 @@ test("malformed extras warn and valid extras retain lexical order", () => {
 		".claude/a.json": { PreToolUse: [hook("echo a")] },
 	});
 	writeFileSync(join(projectDir, ".claude", "bad.json"), "{broken");
-	const result = loadClaudeHooks({ home, projectDir, includeProject: true }, { ...DEFAULT_OPTIONS, extraFiles: ["*.json"] });
-	assert.deepEqual(result.hooks.map((h) => h.command), ["echo a", "echo b"]);
+	const result = loadClaudeHooks(
+		{ home, projectDir, includeProject: true },
+		{ ...DEFAULT_OPTIONS, extraFiles: ["*.json"] },
+	);
+	assert.deepEqual(
+		result.hooks.map((h) => h.command),
+		["echo a", "echo b"],
+	);
 	assert.ok(result.warnings.some((warning) => warning.includes("bad.json")));
 });
 
@@ -126,7 +138,14 @@ test("hook timeout defaults and per hook override in seconds", () => {
 	const { home, projectDir } = makeProject({
 		".claude/settings.json": {
 			hooks: {
-				PreToolUse: [{ hooks: [{ type: "command", command: "a" }, { type: "command", command: "b", timeout: 5 }] }],
+				PreToolUse: [
+					{
+						hooks: [
+							{ type: "command", command: "a" },
+							{ type: "command", command: "b", timeout: 5 },
+						],
+					},
+				],
 				SessionEnd: [hook("c")],
 			},
 		},
@@ -152,7 +171,10 @@ test("globToRegex matches simple patterns", () => {
 test("loadOptions reads project override file and env var", () => {
 	const { home, projectDir } = makeProject({});
 	mkdirSync(join(projectDir, ".pi"), { recursive: true });
-	writeFileSync(join(projectDir, ".pi", "claude-hooks.json"), JSON.stringify({ extraFiles: ["x.json"], verbose: true }));
+	writeFileSync(
+		join(projectDir, ".pi", "claude-hooks.json"),
+		JSON.stringify({ extraFiles: ["x.json"], verbose: true }),
+	);
 	const opts = loadOptions(projectDir, home);
 	assert.deepEqual(opts.extraFiles, ["x.json"]);
 	assert.equal(opts.verbose, true);

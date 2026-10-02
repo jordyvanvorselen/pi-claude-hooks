@@ -6,7 +6,9 @@ export function parseHookJson(stdout: string): HookJsonOutput | undefined {
 	try {
 		const parsed = JSON.parse(trimmed);
 		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as HookJsonOutput;
-	} catch {}
+	} catch {
+		// Not valid JSON. Fall through and treat the output as plain text.
+	}
 	return undefined;
 }
 
@@ -81,7 +83,12 @@ export function interpretResults(event: string, results: HookRunResult[]): HookO
 	return outcome;
 }
 
-function applyJson(event: string, json: import("./types.ts").HookJsonOutput, outcome: HookOutcome, block: (reason?: string) => void) {
+function applyJson(
+	event: string,
+	json: import("./types.ts").HookJsonOutput,
+	outcome: HookOutcome,
+	block: (reason?: string) => void,
+) {
 	if (typeof json.systemMessage === "string" && json.systemMessage) outcome.systemMessages.push(json.systemMessage);
 
 	if (json.continue === false) {

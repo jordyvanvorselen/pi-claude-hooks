@@ -3,7 +3,13 @@ import { test } from "node:test";
 import { interpretResults, parseHookJson } from "../src/output.ts";
 import type { HookRunResult, LoadedHook } from "../src/types.ts";
 
-const hook = (event: string): LoadedHook => ({ event, matcher: undefined, command: "x", timeoutMs: 1000, source: "test" });
+const hook = (event: string): LoadedHook => ({
+	event,
+	matcher: undefined,
+	command: "x",
+	timeoutMs: 1000,
+	source: "test",
+});
 
 function result(event: string, partial: Partial<HookRunResult>): HookRunResult {
 	const stdout = partial.stdout ?? "";
@@ -24,9 +30,12 @@ test("PreToolUse exit 2 blocks with stderr as reason", () => {
 
 test("PreToolUse permissionDecision deny wins over allow from another hook", () => {
 	const o = interpretResults("PreToolUse", [
-		result("PreToolUse", { stdout: '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}' }),
 		result("PreToolUse", {
-			stdout: '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"nope"}}',
+			stdout: '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}',
+		}),
+		result("PreToolUse", {
+			stdout:
+				'{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"nope"}}',
 		}),
 	]);
 	assert.equal(o.blocked, true);
@@ -55,7 +64,9 @@ test("PreToolUse ask and updatedInput are surfaced", () => {
 });
 
 test("legacy decision block on PreToolUse blocks", () => {
-	const o = interpretResults("PreToolUse", [result("PreToolUse", { stdout: '{"decision":"block","reason":"legacy"}' })]);
+	const o = interpretResults("PreToolUse", [
+		result("PreToolUse", { stdout: '{"decision":"block","reason":"legacy"}' }),
+	]);
 	assert.equal(o.blocked, true);
 	assert.equal(o.blockReason, "legacy");
 });
@@ -67,7 +78,9 @@ test("PostToolUse exit 2 becomes model feedback and does not block", () => {
 });
 
 test("PostToolUse decision block reason becomes feedback", () => {
-	const o = interpretResults("PostToolUse", [result("PostToolUse", { stdout: '{"decision":"block","reason":"fix it"}' })]);
+	const o = interpretResults("PostToolUse", [
+		result("PostToolUse", { stdout: '{"decision":"block","reason":"fix it"}' }),
+	]);
 	assert.deepEqual(o.feedback, ["fix it"]);
 });
 
@@ -89,7 +102,9 @@ test("SessionStart plain stdout is context and exit 2 is only an error", () => {
 });
 
 test("continue false stops and blocks on blockable events", () => {
-	const o = interpretResults("PreToolUse", [result("PreToolUse", { stdout: '{"continue":false,"stopReason":"done"}' })]);
+	const o = interpretResults("PreToolUse", [
+		result("PreToolUse", { stdout: '{"continue":false,"stopReason":"done"}' }),
+	]);
 	assert.equal(o.stop, true);
 	assert.equal(o.stopReason, "done");
 	assert.equal(o.blocked, true);
